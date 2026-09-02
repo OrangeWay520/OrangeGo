@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <cache-path name="apk_export" path="apk_export/" />
+    <cache-path name="text_out" path="text_out/" />
+    <!-- 内置文件浏览器选中的任意外部存储文件，通过 FileProvider 分享发送 -->
+    <external-path name="external_root" path="." />
+</paths>

@@ -1,0 +1,28 @@
+# ---- Gradle / Android ----
+.gradle/
+.kotlin/
+**/build/
+.cxx/
+captures/
+
+# ---- 本地配置与签名（勿提交）----
+android/local.properties
+**/keystore.properties
+
+# ---- IDE ----
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# ---- Windows 构建产物（保留源码与 Assets 资源）----
+windows/**/bin/
+windows/**/obj/
+
+# ---- 根目录测试截图等 ----
+/*.png
+
+# ---- 系统/日志 ----
+.DS_Store
+*.log
+Thumbs.db
