@@ -27,6 +27,12 @@ class SettingsRepo(private val context: Context) {
     private val KEY_AUTO_ACCEPT_TEXT = booleanPreferencesKey("receive_auto_accept_text")
     // 传输记录自动清理：保留最近 N 天的记录（0=不自动清理）
     private val KEY_AUTO_CLEANUP_DAYS = intPreferencesKey("auto_cleanup_days")
+    // 图片集成发送：true=多张图片合并到一个消息气泡；false=每张图片单独一个气泡（默认）
+    private val KEY_INTEGRATE_IMAGES = booleanPreferencesKey("media_integrate_images")
+    // 收藏夹（白名单）：JSON 数组 [{"id":"og_xxx","name":"PC","ip":"192.168.1.1"}, ...]
+    private val KEY_FAVORITES_JSON = stringPreferencesKey("favorites_json")
+    // 自动保存收藏夹设备的文件（默认开启）
+    private val KEY_AUTO_SAVE_WHITELIST = booleanPreferencesKey("receive_auto_save_whitelist")
 
     val deviceId: Flow<String> = context.dataStore.data.map { it[KEY_DEVICE_ID].orEmpty() }
     val deviceName: Flow<String> = context.dataStore.data.map { it[KEY_DEVICE_NAME].orEmpty() }
@@ -45,6 +51,12 @@ class SettingsRepo(private val context: Context) {
     val autoAcceptText: Flow<Boolean> = context.dataStore.data.map { it[KEY_AUTO_ACCEPT_TEXT] ?: true }
     // 传输记录自动清理保留天数（0=不自动清理）
     val autoCleanupDays: Flow<Int> = context.dataStore.data.map { it[KEY_AUTO_CLEANUP_DAYS] ?: 0 }
+    // 图片集成发送（默认 false：多张图片各自独立气泡）
+    val integrateImages: Flow<Boolean> = context.dataStore.data.map { it[KEY_INTEGRATE_IMAGES] ?: false }
+    // 收藏夹 JSON（空字符串=无收藏）
+    val favoritesJson: Flow<String> = context.dataStore.data.map { it[KEY_FAVORITES_JSON].orEmpty() }
+    // 自动保存收藏夹设备的文件（默认开启）
+    val autoSaveWhitelist: Flow<Boolean> = context.dataStore.data.map { it[KEY_AUTO_SAVE_WHITELIST] ?: true }
 
     suspend fun saveDeviceId(id: String) = context.dataStore.edit { it[KEY_DEVICE_ID] = id }
     suspend fun saveDeviceName(name: String) = context.dataStore.edit { it[KEY_DEVICE_NAME] = name }
@@ -58,4 +70,7 @@ class SettingsRepo(private val context: Context) {
     suspend fun savePinCode(code: String) = context.dataStore.edit { it[KEY_PIN_CODE] = code }
     suspend fun saveAutoAcceptText(v: Boolean) = context.dataStore.edit { it[KEY_AUTO_ACCEPT_TEXT] = v }
     suspend fun saveAutoCleanupDays(v: Int) = context.dataStore.edit { it[KEY_AUTO_CLEANUP_DAYS] = v }
+    suspend fun saveIntegrateImages(v: Boolean) = context.dataStore.edit { it[KEY_INTEGRATE_IMAGES] = v }
+    suspend fun saveFavoritesJson(v: String) = context.dataStore.edit { it[KEY_FAVORITES_JSON] = v }
+    suspend fun saveAutoSaveWhitelist(v: Boolean) = context.dataStore.edit { it[KEY_AUTO_SAVE_WHITELIST] = v }
 }

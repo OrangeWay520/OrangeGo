@@ -1,0 +1,336 @@
+<Window x:Class="OrangeGO.Windows.MediaPreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="预览" Width="900" Height="600" MinWidth="420" MinHeight="320"
+        WindowStartupLocation="CenterOwner" WindowStyle="SingleBorderWindow"
+        FontFamily="Microsoft YaHei UI, Segoe UI"
+        Background="{DynamicResource BgBrush}"
+        Foreground="{DynamicResource TextPrimaryBrush}">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6"
+                            GlassFrameThickness="0,0,0,1" CornerRadius="0" UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <!-- 播放控制条按钮（圆形主色播放键） -->
+        <Style x:Key="MediaPlayBtn" TargetType="Button">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="17">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 标题栏透明按钮（最小化/最大化：hover 变 SurfaceAlt） -->
+        <Style x:Key="WinCaptionBtn" TargetType="Button">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Arrow"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 窗口关闭按钮（hover 变红） -->
+        <Style x:Key="WinCloseStyle" TargetType="Button">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Arrow"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="{DynamicResource DangerBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bg" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 现代化进度条：细圆角轨道 + Accent 已播填充 + 白色圆钮；hover 变粗变圆 -->
+        <Style x:Key="ModernSeekBar" TargetType="Slider">
+            <Setter Property="Height" Value="22"/>
+
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid VerticalAlignment="Center">
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Focusable="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border x:Name="Fill" Height="4" CornerRadius="2" Background="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Focusable="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="4" CornerRadius="2" Background="{DynamicResource SurfaceAltBrush}" VerticalAlignment="Center"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb" Width="12" Height="12">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border x:Name="Knob" Width="12" Height="12" CornerRadius="6" Background="White" Margin="0,0,0,0">
+                                                    <Border.Effect>
+                                                        <DropShadowEffect BlurRadius="5" ShadowDepth="1" Opacity="0.25"/>
+                                                    </Border.Effect>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Thumb" Property="Width" Value="14"/>
+                                <Setter TargetName="Thumb" Property="Height" Value="14"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 现代化音量条：胶囊底色上用半透明轨道 + Accent 填充 + 白色圆钮（带描边），对比清晰 -->
+        <Style x:Key="ModernVolBar" TargetType="Slider">
+            <Setter Property="Width" Value="80"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="Minimum" Value="0"/>
+            <Setter Property="Maximum" Value="100"/>
+            <Setter Property="IsMoveToPointEnabled" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid VerticalAlignment="Center">
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Focusable="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border x:Name="Fill" Height="5" CornerRadius="3" Background="{DynamicResource AccentBrush}" VerticalAlignment="Center"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Focusable="False">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="5" CornerRadius="3" Background="#55FFFFFF" VerticalAlignment="Center"
+                                                        BorderBrush="#33FFFFFF" BorderThickness="1"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb" Width="12" Height="12">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border x:Name="Knob" Width="12" Height="12" CornerRadius="6" Background="White"
+                                                        BorderBrush="#66000000" BorderThickness="1"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="44"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 自绘标题栏：文件名 + 最小化/最大化/关闭 -->
+        <Grid Grid.Row="0" Background="{DynamicResource SurfaceBrush}" MouseLeftButtonDown="TitleBar_MouseLeftDown">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="TitleText" Margin="16,0,0,0" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"
+                       TextTrimming="CharacterEllipsis"/>
+            <Button Grid.Column="1" Style="{StaticResource WinCaptionBtn}" Click="MinBtn_Click">
+                <TextBlock Text="&#xE921;" FontFamily="Segoe MDL2 Assets" FontSize="10" VerticalAlignment="Center"/>
+            </Button>
+            <Button x:Name="MaxBtn" Grid.Column="2" Style="{StaticResource WinCaptionBtn}" Click="MaxBtn_Click">
+                <TextBlock x:Name="MaxIcon" Text="&#xE922;" FontFamily="Segoe MDL2 Assets" FontSize="10" VerticalAlignment="Center"/>
+            </Button>
+            <Button Grid.Column="3" Style="{StaticResource WinCloseStyle}" Click="CloseBtn_Click">
+                <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="10" VerticalAlignment="Center"/>
+            </Button>
+        </Grid>
+
+        <!-- 媒体主体区 -->
+        <Grid Grid.Row="1" Background="{DynamicResource SurfaceBrush}" ClipToBounds="True">
+            <!-- 图片：滚轮以鼠标为中心缩放 + 拖拽平移 + 双击复位 -->
+            <Border x:Name="ImageHost" Visibility="Collapsed" Background="Transparent" ClipToBounds="True"
+                    MouseWheel="ImgMouseWheel">
+                <Grid>
+                    <Grid x:Name="ImageRoot" Background="Transparent" RenderTransformOrigin="0.5,0.5"
+                          MouseLeftButtonDown="ImgMouseDown" MouseMove="ImgMouseMove" MouseLeftButtonUp="ImgMouseUp"
+                          Cursor="Hand">
+                        <Grid.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform x:Name="ImgScale" ScaleX="1" ScaleY="1"/>
+                                <TranslateTransform x:Name="ImgPan"/>
+                            </TransformGroup>
+                        </Grid.RenderTransform>
+                        <Image x:Name="MediaImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Grid>
+                    <!-- 解码失败提示（HEIC 未装 HEIF 扩展等） -->
+                    <Grid x:Name="ImageHint" Visibility="Collapsed" Background="#CC101014">
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="360" Margin="36">
+                            <TextBlock Text="&#xE7B8;" FontFamily="Segoe MDL2 Assets" FontSize="44"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock x:Name="ImageHintText" Margin="0,16,0,0" FontSize="13" LineHeight="21"
+                                       TextWrapping="Wrap" TextAlignment="Center" Foreground="White"/>
+                            <TextBlock x:Name="InstallHintLink" Margin="0,16,0,0" FontSize="12"
+                                       TextAlignment="Center" Visibility="Collapsed">
+                                <Hyperlink x:Name="InstallLink" RequestNavigate="InstallHeifLink_Click" Foreground="#4CC2FF"
+                                           TextDecorations="Underline"/>
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <!-- 视频主体（MediaElement 由代码注入） -->
+            <Grid x:Name="VideoHost" Visibility="Collapsed" Background="Black">
+                <Button x:Name="VideoBigPlay" Width="72" Height="72" Style="{StaticResource MediaPlayBtn}" Click="BigPlay_Click"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Path Data="M10 6 L24 16 L10 26 Z" Fill="White" Width="26" Height="30" Stretch="Uniform"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+            </Grid>
+
+            <!-- 音频主体 -->
+            <Grid x:Name="AudioHost" Visibility="Collapsed" Background="{DynamicResource SurfaceBrush}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="88" Height="88" CornerRadius="44" Background="{DynamicResource AccentAltBrush}"
+                            HorizontalAlignment="Center">
+                        <Button x:Name="AudioBigPlay" Style="{StaticResource MediaPlayBtn}" Width="64" Height="64"
+                                Click="BigPlay_Click">
+                            <Path Data="M10 6 L24 16 L10 26 Z" Fill="White" Width="24" Height="28" Stretch="Uniform"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </Border>
+                    <TextBlock x:Name="AudioName" FontSize="14" FontWeight="SemiBold" Margin="0,18,0,0"
+                               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="520"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- 底部控制条（图片隐藏，视频/音频显示） -->
+        <Grid x:Name="MediaBar" Grid.Row="2" Background="{DynamicResource SurfaceBrush}" Visibility="Collapsed">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Border Grid.Row="0" Background="{DynamicResource BorderBrush}"/>
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="PlayToggle" Style="{StaticResource MediaPlayBtn}" Click="PlayToggle_Click" Margin="16,9,0,9">
+                    <Path x:Name="PlayIcon" Data="M10 6 L24 16 L10 26 Z" Fill="White" Width="12" Height="14" Stretch="Uniform"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+                <Slider x:Name="SeekBar" Grid.Column="1" Margin="12,0" VerticalAlignment="Center"
+                        Style="{StaticResource ModernSeekBar}"
+                        Minimum="0" Maximum="100" Value="0"
+                        PreviewMouseLeftButtonDown="Seek_PreviewDown" PreviewMouseMove="Seek_PreviewMove"
+                        PreviewMouseLeftButtonUp="Seek_PreviewUp" ValueChanged="Seek_Changed"/>
+                <TextBlock x:Name="TimeText" Grid.Column="2" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                           VerticalAlignment="Center" Text="00:00 / 00:00" Margin="10,0,4,0"/>
+                <!-- 音量：图标 + 胶囊滑块（hover 淡入），图标与滑块紧邻无空隙，避免误关 -->
+                <Grid x:Name="VolumeZone" Grid.Column="3" Margin="4,0,16,0" VerticalAlignment="Center"
+                      Background="Transparent">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border x:Name="VolCapsule" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="15"
+                                Height="30" VerticalAlignment="Center" Margin="0,0,6,0"
+                                Visibility="Collapsed" Opacity="0">
+                            <Slider x:Name="VolBar" Style="{StaticResource ModernVolBar}" Width="80" Margin="8,0"
+                                    VerticalAlignment="Center"
+                                    PreviewMouseLeftButtonDown="VolBar_PreviewDown" PreviewMouseMove="VolBar_PreviewMove"
+                                    PreviewMouseLeftButtonUp="VolBar_PreviewUp" ValueChanged="VolBar_Changed"/>
+                        </Border>
+                        <Button x:Name="VolBtn" Style="{StaticResource MediaPlayBtn}" Width="30" Height="30" Click="VolBtn_Click"
+                                ToolTip="音量">
+                            <TextBlock x:Name="VolIcon" Text="&#xE767;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                       Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

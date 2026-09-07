@@ -12,11 +12,14 @@ import java.net.DatagramSocket
 import java.net.InetAddress
 import java.util.concurrent.Executors
 
-/** 设备发现：mDNS(NsdManager) 广告+浏览 + UDP 广播，双通道结果合并进同一设备表。 */
+/** 设备发现：mDNS(NsdManager) 广告+浏览 + UDP 广播 + LocalSend 224.0.0.167 组播，三通道结果合并进同一设备表。 */
 class DiscoveryManager(
     private val context: Context,
     private val deviceId: String,
-    private val deviceName: String
+    private val deviceName: String,
+    // LocalSend 组播通告所需的本机身份（延迟求值，fingerprint 在 LsCert.init 后才有）
+    private val localFingerprint: () -> String = { "" },
+    private val localDeviceModel: () -> String = { "Android" }
 ) {
     private val peers = LinkedHashMap<String, Peer>()
     private val main = Handler(Looper.getMainLooper())
@@ -128,7 +131,15 @@ class DiscoveryManager(
 
     private fun udpLoop() {
         try {
-            socket = DatagramSocket(Protocol.Port).also { it.reuseAddress = true; it.broadcast = true }
+            val ms = java.net.MulticastSocket(Protocol.Port).also { it.reuseAddress = true; it.broadcast = true }
+            socket = ms
+            // 指定出口接口（多网卡时确保从 selfIp 对应网卡收发）
+            selfIp?.let { runCatching { ms.networkInterface = java.net.NetworkInterface.getByInetAddress(it) } }
+            // 加入 LocalSend 组播组 224.0.0.167（与官方 multicast 对齐）
+            runCatching {
+                val group = InetAddress.getByName(Protocol.LS_MULTICAST_IP)
+                ms.joinGroup(java.net.InetSocketAddress(group, Protocol.LS_MULTICAST_PORT), ms.networkInterface)
+            }
             Log.i(TAG, "UDP 53317 bind success, local=${socket?.localSocketAddress}")
         } catch (e: Throwable) {
             Log.w(TAG, "udp bind fail", e)
@@ -140,6 +151,27 @@ class DiscoveryManager(
                 val p = DatagramPacket(buffer, buffer.size)
                 s.receive(p)
                 val raw = String(p.data, p.offset, p.length, Charsets.UTF_8)
+                val ip = p.address
+                if (ip !is java.net.Inet4Address) continue
+                val ipStr = ip.hostAddress ?: continue
+                if (ipStr == selfIp?.hostAddress) continue
+                // 判别报文类型：LocalSend presence（有 fingerprint）vs OrangeGo 发现报文（有 messageType）
+                val lsDev = Protocol.parseLsDevice(raw)
+                if (lsDev != null && lsDev.fingerprint.isNotEmpty()) {
+                    Log.i(TAG, "LS presence 收包 from $ipStr alias=${lsDev.alias} fp=${lsDev.fingerprint.take(8)} port=${lsDev.port} proto=${lsDev.protocol}")
+                    upsert(Peer(
+                        deviceId = "ogLS_" + lsDev.fingerprint,
+                        name = lsDev.alias.ifEmpty { "LocalSend 设备" },
+                        ip = ipStr,
+                        port = if (lsDev.port > 0) lsDev.port else Protocol.Port,
+                        isLocalSend = true,
+                        fingerprint = lsDev.fingerprint,
+                        protocol = lsDev.protocol.ifEmpty { "https" },
+                        deviceType = lsDev.deviceType ?: "mobile",
+                        deviceModel = lsDev.deviceModel ?: ""
+                    ))
+                    continue
+                }
                 val info = Protocol.deviceFromRaw(raw) ?: continue
                 if (info.deviceId == deviceId) continue
                 if (info.messageType == Protocol.DiscoveryRequest) {
@@ -149,14 +181,8 @@ class DiscoveryManager(
                     ).toByteArray(Charsets.UTF_8)
                     runCatching { s.send(DatagramPacket(resp, resp.size, p.address, p.port)) }
                 }
-                val ip = p.address
-                if (ip is java.net.Inet4Address) {
-                    val ipStr = ip.hostAddress
-                    if (ipStr != null && ipStr != selfIp?.hostAddress) {
-                        Log.i(TAG, "UDP 收包 from $ipStr/${info.port} mtype=${info.messageType}")
-                        upsert(Peer(info.deviceId, info.name, ipStr, info.port))
-                    }
-                }
+                Log.i(TAG, "UDP 收包 from $ipStr/${info.port} mtype=${info.messageType}")
+                upsert(Peer(info.deviceId, info.name, ipStr, info.port))
             } catch (e: Throwable) {
                 if (!running) break
             }
@@ -174,24 +200,54 @@ class DiscoveryManager(
     }
 
     private fun broadcast() {
-        val payload = Protocol.deviceJson(
-            Protocol.DeviceInfo(deviceId = deviceId, name = deviceName)
-        ).toByteArray(Charsets.UTF_8)
         val s = socket ?: return
+        // OrangeGo 自研：255.255.255.255 有限广播
         runCatching {
+            val payload = Protocol.deviceJson(
+                Protocol.DeviceInfo(deviceId = deviceId, name = deviceName)
+            ).toByteArray(Charsets.UTF_8)
             s.send(DatagramPacket(payload, payload.size, InetAddress.getByName("255.255.255.255"), Protocol.Port))
+        }
+        // LocalSend：224.0.0.167 组播 presence（有 fingerprint 才发，避免启动早期 LsCert 未初始化）
+        val fp = localFingerprint()
+        if (fp.isNotEmpty()) {
+            runCatching {
+                val presence = Protocol.buildLsPresenceJson(deviceName, fp, localDeviceModel(), Protocol.Port)
+                    .toByteArray(Charsets.UTF_8)
+                val group = InetAddress.getByName(Protocol.LS_MULTICAST_IP)
+                s.send(DatagramPacket(presence, presence.size, group, Protocol.LS_MULTICAST_PORT))
+            }
         }
     }
 
     private fun upsert(peer: Peer) {
         synchronized(peers) {
-            // 以 deviceId 为唯一键去重合并：同一设备的多个地址/双通道统一成一条，避免出现同名重复设备
-            val exist = peers[peer.deviceId]
-            if (exist == null || !exist.key.equals(peer.key, ignoreCase = true)) {
-                peers[peer.deviceId] = peer
-            } else {
+            // 同一台机器可能同时发 OrangeGo 通告（mDNS/广播）和 LocalSend 组播 presence，
+            // 两者 deviceId 不同（og_xxx vs ogLS_fp）但 IP 相同。以 IP 为同机判定，
+            // OrangeGo 身份优先（功能更全：支持文字/撤回），避免同一台 OrangeGo 设备显示成两条。
+            val byIp = peers.values.firstOrNull { it.ip == peer.ip }
+            if (byIp != null && byIp.deviceId != peer.deviceId) {
+                // 同 IP 已有不同 deviceId 条目（双协议通告）
+                if (!peer.isLocalSend) {
+                    // 新通告是 OrangeGo → 覆盖旧条目（无论旧的 OrangeGo 还是 LocalSend）
+                    peers.remove(byIp.deviceId)
+                    peers[peer.deviceId] = peer
+                } else if (byIp.isLocalSend) {
+                    // 新旧都是 LocalSend → 刷新
+                    peers[byIp.deviceId] = peer.copy(lastSeen = System.currentTimeMillis())
+                }
+                // else: 新通告是 LocalSend，旧的是 OrangeGo → 跳过（OrangeGo 优先）
+            } else if (byIp != null) {
+                // 同 IP 同 deviceId（多通道）→ 刷新
                 peers[peer.deviceId] = peer.copy(lastSeen = System.currentTimeMillis())
+            } else {
+                peers[peer.deviceId] = peer
             }
+            // 清理过期条目（TTL 15 秒，与 ViewModel.pruneLoop 对齐）。
+            // 否则 emitSnapshot 会把已离线设备反复推给 ViewModel.onChanged（合并语义），
+            // 与 pruneLoop 形成"加-删"循环造成 UI 闪烁（由其他设备的周期广播触发 emitSnapshot 放大）。
+            val cutoff = System.currentTimeMillis() - 15_000
+            peers.entries.removeIf { it.value.lastSeen < cutoff }
         }
         emitSnapshot()
     }

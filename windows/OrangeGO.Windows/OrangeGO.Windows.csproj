@@ -7,15 +7,40 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <!-- 应用名与可执行文件名：OrangeGo（exe 名称/详情页显示用） -->
+    <AssemblyName>OrangeGo</AssemblyName>
+    <AssemblyTitle>OrangeGo</AssemblyTitle>
+    <Product>OrangeGo</Product>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Company>OrangeWay</Company>
+    <Copyright>© 2026 OrangeWay. Licensed under GPL-3.0.</Copyright>
+    <!-- exe 图标：Assets\OrangeGo.ico（由 logo.png 生成的多尺寸图标） -->
+    <ApplicationIcon>Assets\OrangeGo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Haukcode.Mdns" Version="1.0.18" />
+    <PackageReference Include="SharpVectors" Version="1.8.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+    <PackageReference Include="LibVLCSharp.WPF" Version="3.9.3" />
+    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.21" />
   </ItemGroup>
 
   <!-- 应用图标资源（OrangeGo_logo_original.png 复制而来），供主窗口/任务栏使用 -->
   <ItemGroup>
     <Resource Include="Assets\logo.png" />
+    <!-- LocalSend 官方图标（设备卡 LocalSend 徽章用） -->
+    <Resource Include="Assets\localsend_icon.png" />
+    <!-- Office 品牌图标（Word/Excel/PowerPoint），作为嵌入资源由气泡内 Image 以 pack URI 引用 -->
+    <Resource Include="Assets\office\*.png" />
+  </ItemGroup>
+
+  <!-- Fluent Emoji 彩色 SVG / 旗帜 SVG / Noto PNG（离线打包），随输出目录部署以供离线加载 -->
+  <ItemGroup>
+    <Content Include="Assets\emoji\*.svg;Assets\emoji\*.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

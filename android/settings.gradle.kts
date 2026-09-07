@@ -12,6 +12,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // hCaptcha Android SDK（人机验证）托管于 jitpack
+        maven { url = uri("https://jitpack.io") }
     }
 }
 

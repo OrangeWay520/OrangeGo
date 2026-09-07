@@ -1,0 +1,92 @@
+<Window x:Class="OrangeGO.Windows.ScreenshotWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="区域截图" WindowStyle="None" AllowsTransparency="False"
+        WindowStartupLocation="Manual" ShowInTaskbar="False" Topmost="True"
+        ResizeMode="NoResize" Background="Black" Cursor="Cross" Foreground="White"
+        KeyDown="Window_KeyDown"
+        FontFamily="Microsoft YaHei UI, Segoe UI">
+    <Window.Resources>
+        <Style x:Key="ToolButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="MinWidth" Value="34"/>
+            <Setter Property="MinHeight" Value="30"/>
+            <Setter Property="Margin" Value="2,0"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="Transparent" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#33FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#22FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Canvas x:Name="Root" Background="Black">
+        <!-- 底图：全屏截图 -->
+        <Image x:Name="Shot" Stretch="Fill"/>
+        <!-- 全屏遮罩 -->
+        <Rectangle x:Name="Dim" Fill="#80000000" IsHitTestVisible="False"/>
+        <!-- 选区亮色还原 -->
+        <Rectangle x:Name="SelFill" Stroke="Transparent" Fill="Transparent" IsHitTestVisible="False"/>
+        <!-- 标注层：按选区裁剪 -->
+        <Canvas x:Name="DrawCanvas" IsHitTestVisible="False"/>
+        <!-- 选区边框 -->
+        <Border x:Name="SelBorder" BorderBrush="#FF7A1A" BorderThickness="1.5"
+                CornerRadius="2" IsHitTestVisible="False" Visibility="Collapsed"/>
+        <!-- 尺寸标签 -->
+        <Border x:Name="SizeTag" Background="#CC000000" Padding="6,3" CornerRadius="4"
+                IsHitTestVisible="False" Visibility="Collapsed" Opacity="0.85">
+            <TextBlock x:Name="SizeLabel" Foreground="White" FontSize="12"/>
+        </Border>
+        <!-- 引导提示 -->
+        <TextBlock x:Name="Hint" Text="拖拽选择截取区域，Esc 取消"
+                   Foreground="White" FontSize="13" Margin="14" FontFamily="Microsoft YaHei UI, Segoe UI"/>
+
+        <!-- 编辑工具栏（选中区域后出现） -->
+        <Border x:Name="Toolbar" Background="#F03C3C3C" BorderBrush="#C0FFFFFF" BorderThickness="1"
+                CornerRadius="10" Padding="8,6" Visibility="Collapsed"
+                IsHitTestVisible="True" HorizontalAlignment="Center" Opacity="0.99">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Font Awesome 免费矢量图标 (CC BY 4.0)：矩形/椭圆/箭头/画笔/文字 -->
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="rect"   Click="Tool_Click"><Path Data="M0 96C0 60.7 28.7 32 64 32H384c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96z" Fill="White" Width="17" Height="17" Stretch="Uniform"/></Button>
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="oval"   Click="Tool_Click"><Path Data="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512z" Fill="White" Width="17" Height="17" Stretch="Uniform"/></Button>
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="arrow"  Click="Tool_Click"><Path Data="M502.6 278.6c12.5-12.5 12.5-32.8 0-45.3l-128-128c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L402.7 224 32 224c-17.7 0-32 14.3-32 32s14.3 32 32 32l370.7 0-73.4 73.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l128-128z" Fill="White" Width="17" Height="17" Stretch="Uniform"/></Button>
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="pen"    Click="Tool_Click"><Path Data="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z" Fill="White" Width="17" Height="17" Stretch="Uniform"/></Button>
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="text"   Click="Tool_Click"><Path Data="M254 52.8C249.3 40.3 237.3 32 224 32s-25.3 8.3-30 20.8L57.8 416 32 416c-17.7 0-32 14.3-32 32s14.3 32 32 32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-1.8 0 18-48 159.6 0 18 48-1.8 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l96 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-25.8 0L254 52.8zM279.8 304l-111.6 0L224 155.1 279.8 304z" Fill="White" Width="17" Height="17" Stretch="Uniform"/></Button>
+                <Separator Width="1" Background="#66FFFFFF" Margin="6,4"/>
+                <!-- 色板：红橙黄绿蓝白 -->
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="red"    Click="Swatch_Click"><Border Width="17" Height="17" CornerRadius="8.5" Background="#FFFF5A5A"/></Button>
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="orange" Click="Swatch_Click"><Border Width="17" Height="17" CornerRadius="8.5" Background="#FFFF9A42"/></Button>
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="yellow" Click="Swatch_Click"><Border Width="17" Height="17" CornerRadius="8.5" Background="#FFFFE24D"/></Button>
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="green"  Click="Swatch_Click"><Border Width="17" Height="17" CornerRadius="8.5" Background="#FF4CBD55"/></Button>
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="blue"   Click="Swatch_Click"><Border Width="17" Height="17" CornerRadius="8.5" Background="#FF58A8FF"/></Button>
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="white"  Click="Swatch_Click"><Border Width="17" Height="17" CornerRadius="8.5" Background="White" BorderBrush="#44FFFFFF" BorderThickness="1"/></Button>
+                <Separator Width="1" Background="#66FFFFFF" Margin="6,4"/>
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="undo" Click="Undo_Click" ToolTip="撤销"><Path Data="M48.5 224L40 224c-13.3 0-24-10.7-24-24L16 72c0-9.7 5.8-18.5 14.8-22.2s19.3-1.7 26.2 5.2L98.6 96.6c87.6-86.5 228.7-86.2 315.8 1c87.5 87.5 87.5 229.3 0 316.8s-229.3 87.5-316.8 0c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0c62.5 62.5 163.8 62.5 226.3 0s62.5-163.8 0-226.3c-62.2-62.2-162.7-62.5-225.3-1L185 183c6.9 6.9 8.9 17.2 5.2 26.2s-12.5 14.8-22.2 14.8L48.5 224z" Fill="White" Width="17" Height="17" Stretch="Uniform"/></Button>
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="cancel" Click="CancelTool_Click" ToolTip="取消"><Path Data="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" Fill="White" Width="17" Height="17" Stretch="Uniform"/></Button>
+                <Separator Width="1" Background="#66FFFFFF" Margin="6,4"/>
+                <Button Style="{StaticResource ToolButtonStyle}" Tag="done" Click="Done_Click" ToolTip="确认保存并发送"><StackPanel Orientation="Horizontal"><Path Data="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" Fill="White" Width="15" Height="15" Stretch="Uniform"/><TextBlock Text="完成" Foreground="White" FontSize="13" Margin="4,0,0,0"/></StackPanel></Button>
+            </StackPanel>
+        </Border>
+
+        <!-- 文字输入编辑框 -->
+        <TextBox x:Name="TextEditor" Visibility="Collapsed" Width="220" MinHeight="30"
+                 BorderThickness="1" BorderBrush="#66FFFFFF" Padding="6" FontSize="14"
+                 Background="#E8262626" Foreground="White" CaretBrush="White"/>
+    </Canvas>
+</Window>

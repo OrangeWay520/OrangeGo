@@ -35,6 +35,46 @@
         </Setter>
     </Style>
 
+    <!-- 设备磁贴右上角收藏星标（Material 开源矢量图标）：未收藏空心、收藏实心高亮。
+         负边距让星形顶点与设备头像顶部对齐，并使星标上/右留白一致（约等于卡片内边距）。 -->
+    <Style x:Key="FavTileStyle" TargetType="ToggleButton">
+        <Setter Property="HorizontalAlignment" Value="Right"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="Margin" Value="-5,-5,0,0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Btn" Background="Transparent" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <!-- 圆润星形：用圆角笔画连接(Material 开源 star)：未收藏=空心描边，已收藏=同色填充+描边圆化尖角 -->
+                            <Path x:Name="Star"
+                                  Data="M12,17.27L18.18,21l-1.64,-7.03L22,9.24l-7.19,-0.61L12,2 9.19,8.63 2,9.24l5.46,4.73L5.82,21z"
+                                  Fill="Transparent"
+                                  Stroke="{DynamicResource TextSecondaryBrush}"
+                                  StrokeThickness="1.7"
+                                  StrokeLineJoin="Round"
+                                  StrokeMiterLimit="1"
+                                  Stretch="Uniform"
+                                  Width="17" Height="17"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Star" Property="Fill" Value="{DynamicResource AccentBrush}"/>
+                                <Setter TargetName="Star" Property="Stroke" Value="{DynamicResource AccentBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Btn" Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- 设备磁贴卡片：圆角 + 悬停/按压/选中/拖拽高亮 动效 -->
     <Style x:Key="DeviceTileStyle" TargetType="ListBoxItem">
         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -47,12 +87,9 @@
                             <ScaleTransform ScaleX="1" ScaleY="1"/>
                         </Grid.RenderTransform>
                         <Border x:Name="Card"
-                                Background="{DynamicResource SurfaceBrush}"
-                                BorderBrush="{DynamicResource BorderBrush}"
-                                BorderThickness="1"
                                 CornerRadius="16"
-                                Padding="16"
-                                MinWidth="150" MinHeight="120"
+                                Padding="12"
+                                MinWidth="142" MinHeight="120"
                                 Margin="6">
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -64,13 +101,31 @@
                                 <Border x:Name="Avatar" Width="40" Height="40" CornerRadius="12"
                                         Background="{DynamicResource AccentAltBrush}"
                                         HorizontalAlignment="Left" VerticalAlignment="Top">
-                                    <TextBlock Text="{Binding Initial}" FontSize="18" FontWeight="Bold"
+                                    <TextBlock x:Name="AvatarTxt" Text="{Binding Initial}" FontSize="18" FontWeight="Bold"
                                                Foreground="{DynamicResource AccentBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <Ellipse x:Name="StatusDot" Width="9" Height="9"
-                                         Fill="{DynamicResource AccentBrush}"
-                                         HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,0"/>
+                                <!-- 收藏（白名单）开关：按设备 ID 收藏 -->
+                                <ToggleButton Style="{StaticResource FavTileStyle}" Tag="{Binding}"
+                                              IsChecked="{Binding IsFavorite, Mode=OneWay}"/>
+                                <!-- LocalSend 设备徽章：官方图标 + LocalSend 文字；底部与头像底水平、位于星标下方，不遮挡收藏键 -->
+                                <Border x:Name="LocalSendTag"
+                                        CornerRadius="8" Padding="5,1"
+                                        Background="{DynamicResource SurfaceBrush}"
+                                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                                        HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                                        Margin="46,0,0,0" Visibility="Collapsed"
+                                        ToolTip="LocalSend 设备（仅限文件互传）">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Image Source="pack://application:,,,/Assets/localsend_icon.png"
+                                               Width="10" Height="10" Stretch="Uniform"
+                                               RenderOptions.BitmapScalingMode="HighQuality"
+                                               VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <TextBlock Text="LocalSend" FontSize="9" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
                             </Grid>
                                 <StackPanel Grid.Row="1" Margin="0,10,0,6" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold"
@@ -81,25 +136,44 @@
                                 <Border Grid.Row="2" CornerRadius="8" Padding="8,3"
                                         Background="{DynamicResource SurfaceAltBrush}"
                                         HorizontalAlignment="Left">
-                                    <TextBlock Text="{Binding Status}" FontSize="11"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse x:Name="StatusDot" Width="6" Height="6" Fill="{DynamicResource AccentBrush}"
+                                                 VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Status}" FontSize="11"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
                                 </Border>
                             </Grid>
                             <Border.Style>
                                 <Style TargetType="Border">
+                                    <!-- 基础底色/边框放样式 setter（本地值会盖过触发器，故不能写在 Border 属性上） -->
+                                    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-                                        </DataTrigger>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
                                         </Trigger>
+                                        <!-- 选中设备：卡片整体点亮为主题选区色（浅色=橙 / 深色=暗橙）+ 强调色描边 2px；放在最后保证选中态优先于悬停 -->
+                                        <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource SelectionBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                                            <Setter Property="BorderThickness" Value="2"/>
+                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
                         </Border>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <!-- LocalSend 设备：显示徽章，并把卡片主题色切换为 LocalSend 青绿色（Material Teal） -->
+                        <DataTrigger Binding="{Binding IsLocalSend}" Value="True">
+                            <Setter TargetName="LocalSendTag" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="Avatar" Property="Background" Value="#00897B"/>
+                            <Setter TargetName="AvatarTxt" Property="Foreground" Value="White"/>
+                            <Setter TargetName="StatusDot" Property="Fill" Value="#26A69A"/>
+                        </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Trigger.EnterActions>
                                 <BeginStoryboard>
@@ -202,6 +276,41 @@
         </Setter>
     </Style>
 
+    <!-- 危险按钮（清除/删除类破坏性操作）：默认透明红字，悬停红色填充白字 -->
+    <Style x:Key="DangerButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Padding" Value="18,9"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource DangerBrush}"/>
+        <Setter Property="BorderThickness" Value="1.2"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource DangerBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <!-- 悬停：文字切白（继承自按钮前景色） -->
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="White"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
     <!-- 进度条（平滑填充 + 波纹） -->
     <Style x:Key="ModernProgressBarStyle" TargetType="ProgressBar">
         <Setter Property="Height" Value="6"/>
@@ -215,6 +324,105 @@
                         <Border x:Name="Track" Background="{DynamicResource SurfaceAltBrush}" CornerRadius="3"/>
                         <Border x:Name="PART_Indicator" Background="{DynamicResource AccentBrush}" CornerRadius="3" HorizontalAlignment="Left"/>
                     </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+<!-- 右键菜单底部：现代卡片式菜单项（带图标位 + 悬停高亮） -->
+    <Style x:Key="ModernMenuItemStyle" TargetType="MenuItem">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="Bg" CornerRadius="8" Margin="4,1" Padding="12,9" Background="Transparent">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ContentPresenter x:Name="IconHost" ContentSource="Icon" Width="17" Height="17"
+                                              Margin="0,0,10,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <ContentPresenter Grid.Column="1" ContentSource="Header"
+                                              VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                            <Setter Property="Cursor" Value="Arrow"/>
+                        </Trigger>
+                        <!-- 无图标时不占位 -->
+                        <DataTrigger Binding="{Binding Icon, RelativeSource={RelativeSource Self}}" Value="{x:Null}">
+                            <Setter TargetName="IconHost" Property="Margin" Value="0"/>
+                            <Setter TargetName="IconHost" Property="Width" Value="0"/>
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 右键菜单分隔线：细圆点线 -->
+    <Style TargetType="{x:Type Separator}">
+        <Setter Property="Margin" Value="8,2"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Border Height="1" Background="{DynamicResource BorderBrush}"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 土气泡右键菜单项按钮（自绘 MenuItem 视觉，用于 AllowsTransparency 的 Popup，避免系统矩形阴影） -->
+    <Style x:Key="PopupMenuItemButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bg" CornerRadius="8" Margin="4,1" Padding="12,9" Background="Transparent">
+                        <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bg" Property="Background" Value="{DynamicResource SurfaceAltBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bg" Property="Opacity" Value="0.8"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- 右键菜单容器：圆角卡片 + 阴影 -->
+    <Style x:Key="ModernContextMenuStyle" TargetType="ContextMenu">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContextMenu">
+                    <Border Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                            CornerRadius="12" Padding="5" MinWidth="150"
+                            SnapsToDevicePixels="True" UseLayoutRounding="True">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Direction="-90" Opacity="0.22" Color="#000000"/>
+                        </Border.Effect>
+                        <ItemsPresenter/>
+                    </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

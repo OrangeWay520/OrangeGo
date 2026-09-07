@@ -8,6 +8,8 @@ captures/
 # ---- 本地配置与签名（勿提交）----
 android/local.properties
 **/keystore.properties
+*.jks
+*.keystore
 
 # ---- IDE ----
 .idea/

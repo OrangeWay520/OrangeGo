@@ -2,6 +2,8 @@
 <paths>
     <cache-path name="apk_export" path="apk_export/" />
     <cache-path name="text_out" path="text_out/" />
+    <!-- 检查更新下载的 APK 放在 cacheDir 根（orangego_update.apk），需暴露给 FileProvider 才能安装 -->
+    <cache-path name="cache_root" path="." />
     <!-- 内置文件浏览器选中的任意外部存储文件，通过 FileProvider 分享发送 -->
     <external-path name="external_root" path="." />
 </paths>

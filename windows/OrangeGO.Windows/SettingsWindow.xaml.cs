@@ -18,6 +18,10 @@ public partial class SettingsWindow : Window
         _settings = settings;
         _onSaved = onSaved;
 
+        // 与主窗口一致：系统级圆角
+        SourceInitialized += (_, _) =>
+            ApplyCornerPreference(new System.Windows.Interop.WindowInteropHelper(this).Handle);
+
         // 载入当前值
         NameBox.Text = settings.DeviceName;
         DirBox.Text = settings.SaveDir;
@@ -67,6 +71,31 @@ public partial class SettingsWindow : Window
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>自绘标题栏拖动窗口。</summary>
+    private void TitleBar_MouseLeftDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed) DragMove();
+    }
+
+    /// <summary>让系统给窗口四角绘制圆角（与主窗口一致）。</summary>
+    private static void ApplyCornerPreference(IntPtr hwnd)
+    {
+        try
+        {
+            const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
+            const int DWMWCP_ROUND = 2;
+            var pref = DWMWCP_ROUND;
+            _ = DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref pref, sizeof(int));
+            const int DWMWA_TRANSITIONS_FORCEDISABLED = 3;
+            var disabled = 0;
+            _ = DwmSetWindowAttribute(hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, ref disabled, sizeof(int));
+        }
+        catch { /* 老系统不支持则保持直角 */ }
+    }
+
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 
     /// <summary>写入/删除当前用户的「开机自启动」注册表项。</summary>
     private static void SetAutoStart(bool enable)

@@ -16,6 +16,7 @@ public static class Protocol
     public const string Expired = "expired";
     public const string SendCancel = "sendCancel";
     public const string Message = "message"; // 文本消息命令
+    public const string Recall = "recall"; // 撤回命令（发送方撤回已发文本/文件）
     public const string MessageType = "messageType";
 
     // 端点：v2 prepare/upload 为主，v1 init/file 保留兼容
@@ -25,6 +26,7 @@ public static class Protocol
     public const string PathFile = "/api/v1/send/file";
     public const string PathCancel = "/api/v1/send/cancel";
     public const string PathMessage = "/api/v1/send/message";
+    public const string PathRecall = "/api/v1/send/recall";
 
     /// <summary>发现/信息报文公共字段。</summary>
     public sealed class DeviceInfo
@@ -41,9 +43,12 @@ public static class Protocol
     {
         [JsonPropertyName("id")] public string Id { get; set; } = "";
         [JsonPropertyName("fileName")] public string FileName { get; set; } = "";
+        /// <summary>可选：该文件相对发送根目录的路径（`/` 分隔，含文件名）。非空时接收端据此重建子目录结构；空 = 普通文件存到保存目录根。</summary>
+        [JsonPropertyName("relativePath")] public string? RelativePath { get; set; }
         [JsonPropertyName("size")] public long Size { get; set; }
         [JsonPropertyName("fileType")] public string FileType { get; set; } = "application/octet-stream";
         [JsonPropertyName("sha256")] public string? Sha256 { get; set; }
+        [JsonPropertyName("thumb")] public string? Thumb { get; set; }
     }
 
     /// <summary>发送初始化请求（v2 携带文件清单）。</summary>
@@ -80,6 +85,13 @@ public static class Protocol
     public sealed class CancelPayload
     {
         [JsonPropertyName("messageType")] public string MessageType { get; set; } = SendCancel;
+        [JsonPropertyName("sendId")] public string SendId { get; set; } = "";
+    }
+
+    /// <summary>撤回请求（携带被撤回的 sendId）。</summary>
+    public sealed class RecallPayload
+    {
+        [JsonPropertyName("messageType")] public string MessageType { get; set; } = Recall;
         [JsonPropertyName("sendId")] public string SendId { get; set; } = "";
     }
 

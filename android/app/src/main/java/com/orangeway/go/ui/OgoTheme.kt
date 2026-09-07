@@ -83,15 +83,27 @@ fun OgoTheme(content: @Composable () -> Unit) {
         }
     }
     val mode by OgoThemeMode.mode.collectAsState()
-    val darkSystem = isSystemInDarkTheme()
-    val dark = when (mode) {
-        1 -> false
-        2 -> true
-        else -> darkSystem
-    }
+    val dark = appIsDark(mode)
     MaterialTheme(
         colorScheme = if (dark) DarkColors else LightColors,
         typography = Typography(),
         content = content
     )
+}
+
+/** 应用当前是否处于深色（遵循全局主题：1=浅，2=深，0=跟随系统）。 */
+@Composable
+fun appIsDark(): Boolean {
+    val mode by OgoThemeMode.mode.collectAsState()
+    return appIsDark(mode)
+}
+
+@Composable
+private fun appIsDark(mode: Int): Boolean {
+    val darkSystem = isSystemInDarkTheme()
+    return when (mode) {
+        1 -> false
+        2 -> true
+        else -> darkSystem
+    }
 }

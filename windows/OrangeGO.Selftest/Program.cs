@@ -18,13 +18,13 @@ Directory.CreateDirectory(savedDir);
 using (var server = new ReceiveServer { OnIncoming = s => Task.FromResult<string?>(savedDir) })
 using (var sender = new SenderClient(identity))
 {
-    server.Start(port: 53318, host: "127.0.0.1");
+    server.Start(); // 固定监听 Protocol.Port（53317），与正式版一致
     try
     {
         var sendId = Guid.NewGuid().ToString("N");
-        var token = await sender.InitAsync(IPAddress.Loopback, 53318, sendId, new[] { src });
-        await sender.SendFileAsync(IPAddress.Loopback, 53318, token, src, p => { });
-        await sender.CancelAsync(IPAddress.Loopback, 53318, sendId);
+        var token = await sender.InitAsync(IPAddress.Loopback, Protocol.Port, sendId, new[] { src });
+        await sender.SendFileAsync(IPAddress.Loopback, Protocol.Port, token, src, p => { });
+        await sender.CancelAsync(IPAddress.Loopback, Protocol.Port, sendId);
 
         var dest = Path.Combine(savedDir, "hello_测试.bin");
         if (!File.Exists(dest)) { Console.WriteLine("[FAIL] 未生成接收文件"); errorCount++; }

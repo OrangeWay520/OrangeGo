@@ -3,5 +3,13 @@
         <item name="android:statusBarColor">@color/splash_bg</item>
         <item name="android:navigationBarColor">@color/splash_bg</item>
         <item name="android:windowLightStatusBar">true</item>
+        <!-- 启动/窗口背景用 splash_bg（含深色夜间版），避免冷启动时先闪一帧全屏白 -->
+        <item name="android:windowBackground">@color/splash_bg</item>
+    </style>
+
+    <!-- 启动画面：全屏（隐藏状态栏），令 logo 相对整屏垂直居中，不受顶部状态栏影响而显得偏低 -->
+    <style name="Theme.OrangeGO.Splash" parent="Theme.OrangeGO">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
 </resources>

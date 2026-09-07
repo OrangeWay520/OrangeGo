@@ -9,6 +9,10 @@
 
   <ItemGroup>
     <Compile Include="..\OrangeGO.Windows\Core\*.cs" Link="Core\%(Filename)%(Extension)" />
+    <!-- 这两个文件依赖 WPF 程序集（PresentationCore / PresentationFramework），
+         控制台自测工程只跑协议闭环，不需要它们 -->
+    <Compile Remove="..\OrangeGO.Windows\Core\ViewModels.cs" />
+    <Compile Remove="..\OrangeGO.Windows\Core\ProgressRingConverter.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,13 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/splash_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/splash_bg">
+    android:orientation="vertical"
+    android:background="@color/splash_bg"
+    android:fitsSystemWindows="false">
+
+    <!-- 上下两个等宽占位撑开剩余高度，让 logo 精确落在窗口垂直中心，
+         不受顶部状态栏/刘海 inset 影响而整体偏低 -->
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
     <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:id="@+id/splash_logo"
+        android:layout_width="300dp"
+        android:layout_height="109dp"
+        android:layout_gravity="center_horizontal"
+        android:scaleType="fitCenter"
         android:contentDescription="@string/app_name"
         android:src="@drawable/og_barlogo" />
-</FrameLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>

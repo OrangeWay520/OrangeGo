@@ -21,16 +21,24 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file(keystoreProps.getProperty("storeFile", "release.jks"))
+            storePassword = keystoreProps.getProperty("storePassword", "")
+            keyAlias = keystoreProps.getProperty("keyAlias", "orangeway")
+            keyPassword = keystoreProps.getProperty("keyPassword", "")
+        }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // 本地开发阶段用 debug 签名，便于直接安装；正式发布前再配 release 签名
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -64,9 +72,14 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.okhttp)
+    // BouncyCastle：生成 RSA-2048 自签 X509 证书，用于 LocalSend mTLS 客户端身份（对齐官方 cert.rs）
+    implementation("org.bouncycastle:bcprov-jdk15to18:1.78.1")
+    implementation("org.bouncycastle:bcpkix-jdk15to18:1.78.1")
     implementation(libs.coil.compose)
     implementation(libs.coil.svg)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.documentfile)
+    // hCaptcha 原生 Compose SDK（问题反馈人机验证，与 HereIAm 同款）
+    implementation("com.github.hCaptcha.hcaptcha-android-sdk:compose-sdk:5.0.1")
     debugImplementation(libs.androidx.ui.tooling)
 }

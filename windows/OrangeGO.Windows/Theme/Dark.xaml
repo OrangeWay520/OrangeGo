@@ -10,7 +10,13 @@
     <Color x:Key="TextSecondaryColor">#9BA3AF</Color>
     <Color x:Key="AccentColor">#FF8A3D</Color>
     <Color x:Key="AccentAltColor">#3A2410</Color>
+    <Color x:Key="SelectionColor">#5C3A20</Color>
     <Color x:Key="DangerColor">#F0716F</Color>
+    <Color x:Key="WarningColor">#F0A05A</Color>
+    <Color x:Key="SuccessColor">#6CCB8F</Color>
+    <Color x:Key="DangerAltColor">#3A2224</Color>
+    <Color x:Key="WarningAltColor">#3A2B1A</Color>
+    <Color x:Key="SuccessAltColor">#1E3A2A</Color>
 
     <SolidColorBrush x:Key="BgBrush" Color="{StaticResource BgColor}"/>
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
@@ -20,6 +26,12 @@
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}"/>
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
     <SolidColorBrush x:Key="AccentAltBrush" Color="{StaticResource AccentAltColor}"/>
+    <SolidColorBrush x:Key="SelectionBrush" Color="{StaticResource SelectionColor}"/>
     <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
+    <SolidColorBrush x:Key="DangerAltBrush" Color="{StaticResource DangerAltColor}"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+    <SolidColorBrush x:Key="WarningAltBrush" Color="{StaticResource WarningAltColor}"/>
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+    <SolidColorBrush x:Key="SuccessAltBrush" Color="{StaticResource SuccessAltColor}"/>
 
 </ResourceDictionary>
