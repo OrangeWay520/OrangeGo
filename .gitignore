@@ -21,6 +21,11 @@ android/local.properties
 windows/**/bin/
 windows/**/obj/
 
+# ---- 发布产物（不入仓库，由 publish.ps1 上传到 Release）----
+*.apk
+android/OrangeGo-*.apk
+Release/
+
 # ---- 根目录测试截图等 ----
 /*.png
 
