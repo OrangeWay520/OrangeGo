@@ -16,6 +16,7 @@ android/local.properties
 *.iml
 .vscode/
 *.swp
+.trae/
 
 # ---- Windows 构建产物（保留源码与 Assets 资源）----
 windows/**/bin/
